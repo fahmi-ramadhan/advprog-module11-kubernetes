@@ -35,11 +35,75 @@ the default namespace, not in the `kube-system` namespace.
 
 > What is the difference between Rolling Update and Recreate deployment strategy?
 
+Rolling Update strategy updates the application without downtime by gradually replacing
+the old Pods with the new ones. It ensures that a certain number of Pods are available
+throughout the update process. Otherwise, in Recreate strategy, all existing Pods are
+terminated before new Pods are created with the updated version. This approach may cause
+downtime as there is no overlap between old and new Pods.
+
 > Try deploying the Spring Petclinic REST using Recreate deployment strategy and document
 your attempt.
 
+First, I recreate the deployment for Spring Petclinic REST app version 3.0.2 and scale it 
+to 4 replicas. 
+
+![img](https://i.imgur.com/wYMF7uV.png)
+
+Then, I do these steps to try deploying the app using Recreate strategy.
+
+#### 1. Patch Deployment Strategy
+
+Create a patch file `patch-recreate.yaml` to change the deployment strategy to Recreate:
+```yaml
+spec:
+  strategy:
+    $retainKeys:
+    - type
+    type: Recreate
+```
+
+#### 2. Apply Patch
+
+Apply the patch to the existing deployment using the following command:
+```shell
+kubectl patch deployments spring-petclinic-rest --patch-file ./patch-recreate.yaml
+```
+
+#### 3. Verify Change
+
+![](https://i.imgur.com/EyLRSpH.png)
+We can see that after applying the patch, the strategy changed to Recreate
+
+#### 4. Update Image
+
+![img](https://i.imgur.com/2gn6nnf.png)
+After updating the image to version 3.2.1, we can see that the rollout process indicating the
+termination of old pods and the creation of new ones.
+
 > Prepare different manifest files for executing Recreate deployment strategy.
+
+The file is similar with the manifest file from the tutorial and is included in this project.
+I used the following command to generate the deployment YAML file: 
+`kubectl get deployments/spring-petclinic-rest -o yaml > deployment-recreate.yaml`
 
 > What do you think are the benefits of using Kubernetes manifest files? Recall your experience
  in deploying the app manually and compare it to your experience when deploying the same app
  by applying the manifest files (i.e., invoking `kubectl apply-f` command) to the cluster.
+
+Based on my experience, deploying applications using Kubernetes manifest files offers several 
+distinct advantages compared to manual deployment. Here are some key benefits:
+
+1. Consistency and Reproducibility:
+    - **Manual Deployment**: Manually deploying an application involves running a series of kubectl
+    commands. Each deployment might slightly differ depending on the execution order or 
+    parameters provided, leading to inconsistencies.
+    - **Manifest Files**: Using manifest files ensures that the deployment configuration is 
+    consistent every time. The `kubectl apply -f` command applies the same configuration repeatedly, 
+    reducing the risk of errors and discrepancies.
+
+2. Version Control:
+    - **Manual Deployment**: Tracking changes in deployment configurations manually can be challenging. 
+    Any modifications need to be documented separately, and there's a higher chance of human error.
+    - **Manifest Files**: Manifest files can be stored in version control systems (e.g., Git), allowing 
+    for easy tracking of changes over time. This makes it straightforward to roll back to a previous
+    configuration if needed.
